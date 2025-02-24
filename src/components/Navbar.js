@@ -1,16 +1,53 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../api";
 
 export default function Navbar({ activeLink, handleNavLinkClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState({});
+  const [profile, setProfile] = useState(null);
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get("/me", {
+          withCredentials: true,
+        });
+        if (response.status === 200) {
+          setProfile(response.data);
+          setIsLoggedIn(true);
+        }
+      } catch (error) {
+        setIsLoggedIn(false);
+        setProfile(null);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
   };
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/logout", {}, { withCredentials: true });
+      setIsLoggedIn(false);
+      setProfile(null);
+      window.location.reload(); // Reload the page to reset the state
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
+  };
+
+  const profileImage =
+    isLoggedIn && profile ? profile.profilePicture : "assets/users/guest.png";
+  const profileName = isLoggedIn && profile ? profile.username : "Guest";
   // bg-opacity-30 backdrop-filter backdrop-blur-lg
   return (
     <nav className="fixed w-full top-0 z-10 right-0 shadow-md">
@@ -124,55 +161,82 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
                 </svg>
               </button>
 
-              <button
-                type="button"
-                className="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-                id="user-menu-button"
-                aria-expanded={isOpen}
-                aria-haspopup="true"
-                onClick={toggleDropdown}
-              >
-                <span className="sr-only">Open user menu</span>
-                <img
-                  className="h-8 w-8 rounded-full"
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                  alt=""
-                />
-              </button>
-
-              {isOpen && (
-                <div
-                  className="absolute right-0 z-10 mt-5 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none menu-connector"
-                  role="menu"
-                  aria-orientation="vertical"
-                  aria-labelledby="user-menu-button"
+              <div className="relative">
+                <button
+                  type="button"
+                  className="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                  id="user-menu-button"
+                  aria-expanded={isOpen}
+                  aria-haspopup="true"
+                  onClick={toggleDropdown}
                 >
-                  <a
-                    href="#"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    role="menuitem"
-                    id="user-menu-item-0"
+                  <span className="sr-only">Open user menu</span>
+                  <img
+                    className="h-8 w-8 rounded-full"
+                    src={profileImage}
+                    alt="Profile"
+                  />
+                  <span className="ml-2 text-white">{profileName}</span>
+                </button>
+
+                {isOpen && (
+                  <div
+                    className="menu-connector absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="user-menu-button"
                   >
-                    Your Profile
-                  </a>
-                  <a
-                    href="#"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    role="menuitem"
-                    id="user-menu-item-1"
-                  >
-                    Settings
-                  </a>
-                  <a
-                    href="#"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    role="menuitem"
-                    id="user-menu-item-2"
-                  >
-                    Sign out
-                  </a>
-                </div>
-              )}
+                    {isLoggedIn ? (
+                      <>
+                        <a
+                          href={`/${profile.email}`}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                          id="user-menu-item-0"
+                        >
+                          Your Profile
+                        </a>
+                        <a
+                          href="#"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                          id="user-menu-item-1"
+                        >
+                          Settings
+                        </a>
+                        <a
+                          href="#"
+                          onClick={handleLogout}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                          id="user-menu-item-2"
+                        >
+                          Logout
+                        </a>
+                      </>
+                    ) : (
+                      <>
+                        <a
+                          href="/login"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                          id="user-menu-item-0"
+                        >
+                          Login
+                        </a>
+                        <a
+                          href="/register"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                          id="user-menu-item-1"
+                        >
+                          Register
+                        </a>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="-mr-2 flex md:hidden">

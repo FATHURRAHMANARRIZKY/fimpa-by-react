@@ -12,7 +12,6 @@ const Home = ({ onLogout }) => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      // Token dari cookies seharusnya didapat dengan benar
       const token = Cookies.get("token");
       console.log("Token from cookies:", token);
 
@@ -25,6 +24,9 @@ const Home = ({ onLogout }) => {
       try {
         console.log("Sending request to /me...");
         const response = await api.get("/me", {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
           withCredentials: true,
         });
 
