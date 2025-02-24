@@ -19,6 +19,8 @@ const Sidebar = ({ onMenuClick, onLogout }) => {
       collapsible
       collapsed={collapsed}
       onCollapse={(value) => setCollapsed(value)}
+      breakpoint="md"
+      collapsedWidth="0"
       className="bg-gray-800"
     >
       <Menu

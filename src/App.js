@@ -7,6 +7,7 @@ import ContentHome from "./components/Content";
 import api from "./api";
 import { AuthContext } from "./context/AuthContext";
 import HomePage from "./admin/HomePage"; // Import HomePage
+import NotFound from "./NotFound"; // Import NotFound
 
 export default function App() {
   const { isLoggedIn, role, loading, verifyToken, setIsLoggedIn } =
@@ -63,6 +64,8 @@ export default function App() {
           )
         }
       />
+      {/* Tambahkan Route untuk 404 Not Found sebagai Route terakhir */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

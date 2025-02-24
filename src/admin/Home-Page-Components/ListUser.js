@@ -11,7 +11,6 @@ import {
   Select,
 } from "antd";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
-import axios from "axios";
 import api from "../../api";
 
 const { Content } = Layout;
@@ -19,6 +18,7 @@ const { Option } = Select;
 
 const ListUser = () => {
   const [users, setUsers] = useState([]); // Data pengguna
+  const [admins, setAdmins] = useState([]); // Data admin
   const [loading, setLoading] = useState(false); // State untuk loading
   const [isModalVisible, setIsModalVisible] = useState(false); // Modal visibility
   const [currentUser, setCurrentUser] = useState(null); // Data pengguna yang sedang diedit
@@ -28,8 +28,8 @@ const ListUser = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/users");
-      setUsers(response.data); // Atur data pengguna
+      const userResponse = await api.get("/users");
+      setUsers(userResponse.data); // Atur data pengguna
     } catch (error) {
       console.error("Error fetching users:", error);
       message.error("Gagal mengambil data pengguna.");
@@ -38,56 +38,92 @@ const ListUser = () => {
     }
   };
 
+  // Ambil data admin dari server
+  const fetchAdmins = async () => {
+    setLoading(true);
+    try {
+      const adminResponse = await api.get("/admins");
+      setAdmins(adminResponse.data); // Atur data admin
+    } catch (error) {
+      console.error("Error fetching admins:", error);
+      message.error("Gagal mengambil data admin.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers(); // Ambil data pengguna saat komponen dimuat
+    fetchAdmins(); // Ambil data admin saat komponen dimuat
   }, []);
 
-  // Handle delete user
-  const handleDeleteUser = async (id) => {
+  // Handle delete user/admin
+  const handleDeleteUser = async (id, type) => {
     setLoading(true); // Set loading for deletion
     try {
-      await api.delete(`/${id}`.trim());
-      message.success("Pengguna berhasil dihapus!");
+      const url = type === "user" ? `/users/${id}` : `/admins/${id}`;
+      await api.delete(url);
+      message.success(
+        `${type === "user" ? "Pengguna" : "Admin"} berhasil dihapus!`
+      );
       fetchUsers(); // Perbarui daftar pengguna
+      fetchAdmins(); // Perbarui daftar admin
     } catch (error) {
-      console.error("Error deleting user:", error);
-      message.error("Gagal menghapus pengguna.");
+      console.error("Error deleting user/admin:", error);
+      message.error(
+        `Gagal menghapus ${type === "user" ? "pengguna" : "admin"}.`
+      );
     } finally {
       setLoading(false); // Reset loading after deletion
     }
   };
 
-  // Handle save user (add/edit)
+  // Handle save user/admin (add/edit)
   const handleSaveUser = async (values) => {
     setLoading(true); // Set loading for save
     try {
+      const url =
+        currentUser && currentUser.role === "admin" ? `/admins` : `/users`;
       if (currentUser) {
-        // Update user
-        await axios.put(
-          `http://localhost:8080/api/users/${currentUser.id}`,
-          values
+        // Update user/admin
+        await api.put(`${url}/${currentUser.id}`, values);
+        message.success(
+          `${
+            currentUser.role === "admin" ? "Admin" : "Pengguna"
+          } berhasil diperbarui!`
         );
-        message.success("Pengguna berhasil diperbarui!");
       } else {
-        // Add new user
-        await axios.post(
-          "http://localhost:8080/api/users/register",
-          values
+        // Add new user/admin
+        const registerUrl =
+          values.role === "admin" ? "/register" : "/register-user";
+        await api.post(registerUrl, values);
+        message.success(
+          `${
+            values.role === "admin" ? "Admin" : "Pengguna"
+          } berhasil ditambahkan!`
         );
-        message.success("Pengguna berhasil ditambahkan!");
       }
 
       fetchUsers(); // Perbarui daftar pengguna
+      fetchAdmins(); // Perbarui daftar admin
       setIsModalVisible(false); // Tutup modal
       setCurrentUser(null); // Reset current user
       form.resetFields(); // Reset form fields
     } catch (error) {
-      console.error("Error saving user:", error.response || error.message);
-      message.error("Gagal menyimpan pengguna.");
+      console.error(
+        "Error saving user/admin:",
+        error.response || error.message
+      );
+      message.error(
+        `Gagal menyimpan ${values.role === "admin" ? "admin" : "pengguna"}.`
+      );
     } finally {
       setLoading(false); // Reset loading after saving
     }
   };
+
+  // Gabungkan data pengguna dan admin
+  const combinedData = [...users, ...admins];
 
   // Kolom untuk tabel Ant Design
   const columns = [
@@ -113,13 +149,14 @@ const ListUser = () => {
           <Button
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDeleteUser(record.id)}
-          >Hapus</Button>
+            onClick={() => handleDeleteUser(record.id, record.role)}
+          >
+            Hapus
+          </Button>
         </Space>
       ),
     },
   ];
-
   return (
     <Content style={{ padding: "24px", backgroundColor: "#f0f2f5" }}>
       <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -140,7 +177,7 @@ const ListUser = () => {
         <Table
           dataSource={users}
           columns={columns}
-          rowKey="_id"
+          rowKey="id"
           bordered
           loading={loading}
         />

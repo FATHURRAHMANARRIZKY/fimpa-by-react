@@ -12,11 +12,11 @@ import {
   notification,
 } from "antd";
 import api from "../../api"; // Correct import path based on your folder structure
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode } from "jwt-decode"; // Correct import for jwtDecode
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 const CustomerReviews = ({ role, token }) => {
-  const [customerReviews, setCustomerReviews] = useState([]);
+  const [customerReviews, setCustomerReviews] = useState([]); // Inisialisasi dengan array kosong
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -27,7 +27,7 @@ const CustomerReviews = ({ role, token }) => {
   const navigate = useNavigate(); // Initialize navigate hook
 
   const calculateAverageRating = (reviews) => {
-    if (reviews.length === 0) return 0;
+    if (!Array.isArray(reviews) || reviews.length === 0) return 0;
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     return (totalRating / reviews.length).toFixed(2);
   };
@@ -39,7 +39,7 @@ const CustomerReviews = ({ role, token }) => {
     api
       .get("/ratings") // Using the custom Axios instance
       .then((response) => {
-        setCustomerReviews(response.data);
+        setCustomerReviews(response.data || []); // Pastikan data selalu array
         setLoading(false);
       })
       .catch((error) => {
@@ -52,8 +52,8 @@ const CustomerReviews = ({ role, token }) => {
   useEffect(() => {
     if (token && typeof token === "string") {
       const decodedToken = jwtDecode(token);
-      setName(decodedToken.sub);
-      setEmail(decodedToken.sub); // Assuming the subject is the email
+      setName(decodedToken.username || decodedToken.sub); // Sesuaikan sesuai struktur token Anda
+      setEmail(decodedToken.email || decodedToken.sub); // Sesuaikan sesuai struktur token Anda
     }
   }, [token]);
 
@@ -125,7 +125,7 @@ const CustomerReviews = ({ role, token }) => {
           <div className="flex justify-center items-center w-full">
             <Spin size="large" />
           </div>
-        ) : (
+        ) : Array.isArray(customerReviews) && customerReviews.length > 0 ? (
           customerReviews.map((review, index) => (
             <Col key={index} xs={24} md={8}>
               <Card>
@@ -138,6 +138,8 @@ const CustomerReviews = ({ role, token }) => {
               </Card>
             </Col>
           ))
+        ) : (
+          <p className="text-center">Tidak ada ulasan ditemukan.</p>
         )}
       </Row>
 

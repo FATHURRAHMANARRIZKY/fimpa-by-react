@@ -8,6 +8,8 @@ import {
   Modal,
   Form,
   Input,
+  Row,
+  Col,
 } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 import api from "../../api";
@@ -28,9 +30,7 @@ const Contact = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await api.get(
-        "/contact"
-      );
+      const response = await api.get("/contact");
       setProfile(response.data);
     } catch (error) {
       console.error("Error fetching profile data", error);
@@ -43,10 +43,7 @@ const Contact = () => {
     setLoading(true);
     try {
       const updatedProfile = { ...profile, ...values }; // Hanya update bagian yang diedit
-      await api.post(
-        "/contact",
-        updatedProfile
-      );
+      await api.post("/contact", updatedProfile);
       message.success("Profile berhasil diperbarui!");
       fetchProfile(); // Refresh data setelah update
       setIsModalVisible(false);
@@ -58,21 +55,6 @@ const Contact = () => {
       setLoading(false);
     }
   };
-
-  // Handle hapus profil
-  // const handleDeleteProfile = async () => {
-  //   setLoading(true);
-  //   try {
-  //     await axios.delete("https://api.f21.my.id:8443/api/contact");
-  //     message.success("Profile berhasil dihapus!");
-  //     setProfile(null);
-  //   } catch (error) {
-  //     console.error("Error deleting profile:", error);
-  //     message.error("Gagal menghapus profile.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   // Fungsi untuk menangani edit berdasarkan media sosial yang dipilih
   const handleEditProfile = (key) => {
@@ -135,13 +117,6 @@ const Contact = () => {
           >
             Edit
           </Button>
-          {/* <Button
-            danger
-            icon={<DeleteOutlined />}
-            onClick={handleDeleteProfile}
-          >
-            Hapus
-          </Button> */}
         </Space>
       ),
     },
@@ -154,16 +129,18 @@ const Contact = () => {
           Manage Social Media Profiles
         </h1>
 
-        {/* Tabel Ant Design */}
-        <Table
-          dataSource={dataSource}
-          columns={columns}
-          rowKey="key"
-          bordered
-          loading={loading}
-        />
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+            <Table
+              dataSource={dataSource}
+              columns={columns}
+              rowKey="key"
+              bordered
+              loading={loading}
+            />
+          </Col>
+        </Row>
 
-        {/* Modal untuk Edit Profile */}
         <Modal
           title={`Edit ${
             currentProfile

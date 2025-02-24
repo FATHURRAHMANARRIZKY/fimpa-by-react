@@ -1,18 +1,9 @@
 import React, { useState, useEffect } from "react";
-import {
-  Card,
-  Pagination,
-  Input,
-  Modal,
-  Button,
-  InputNumber,
-  message,
-  Spin,
-} from "antd";
+import { Card, Pagination, Input, Modal, Button, message, Spin } from "antd";
 import api from "../../api"; // Import the custom Axios instance
 
 const Product = () => {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState([]); // Inisialisasi dengan array kosong
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,7 +22,7 @@ const Product = () => {
   const fetchProducts = async () => {
     setLoading(true); // Mulai loading
     try {
-      const response = await api.get("/products", { // Use the axios instance here
+      const response = await api.get("/products", {
         params: {
           page: currentPage - 1,
           size: pageSize,
@@ -40,7 +31,7 @@ const Product = () => {
           maxPrice,
         },
       });
-      setProducts(response.data.products);
+      setProducts(response.data.products || []); // Pastikan produk selalu array
       setTotalProducts(response.data.total);
     } catch (error) {
       console.error("Error fetching data", error);
@@ -65,6 +56,7 @@ const Product = () => {
   };
 
   const handleCardClick = (product) => {
+    console.log("Product clicked:", product);
     setSelectedProduct(product);
   };
 
@@ -172,7 +164,6 @@ const Product = () => {
           src={`http://localhost:8080${selectedProduct?.imageUrl}`}
           alt={selectedProduct?.name}
           className="object-cover w-full h-48 mb-4"
-          onError={(e) => (e.target.src = "https://via.placeholder.com/300")}
         />
         <p>{selectedProduct?.description}</p>
         <p className="text-gray-400 text-xs">

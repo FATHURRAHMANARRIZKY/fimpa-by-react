@@ -32,7 +32,6 @@ const HomePage = ({ onLogout }) => {
     <Layout style={{ minHeight: "100vh" }}>
       <Sidebar onLogout={onLogout} onMenuClick={setActiveComponent} />
       <Layout className="site-layout">
-        <HeaderComponent />
         <div style={{ padding: "25px" }}>{renderContent()}</div>
       </Layout>
     </Layout>

@@ -1,20 +1,21 @@
-import { Layout } from 'antd';
-import axios from "axios";
+import { Layout } from "antd";
 import { useState, useEffect } from "react";
-import Cookies from "js-cookie"; // Ensure we get the token from the cookie
-import api from '../../api';
+import Cookies from "js-cookie";
+import api from "../../api";
 
 const { Content } = Layout;
 
 const Home = ({ onLogout }) => {
-    const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchUserData = async () => {
-      // Get the JWT token from cookies
+      // Token dari cookies seharusnya didapat dengan benar
       const token = Cookies.get("token");
+      console.log("Token from cookies:", token);
+
       if (!token) {
         setError("You are not authenticated. Please log in.");
         setLoading(false);
@@ -22,20 +23,20 @@ const Home = ({ onLogout }) => {
       }
 
       try {
-        // Fetch user data from the /me endpoint, sending the token in the Authorization header
+        console.log("Sending request to /me...");
         const response = await api.get("/me", {
-          headers: {
-            Authorization: `Bearer ${token}`, // Send token in the Authorization header
-          },
+          withCredentials: true,
         });
 
+        console.log("Received response from /me:", response);
+
         if (response.data && response.data.username) {
-          setUsername(response.data.username); // Set username from response data
+          setUsername(response.data.username);
         } else {
           setError("User data not found.");
         }
       } catch (err) {
-        // Handle API errors
+        console.error("Error fetching data from /me:", err);
         if (err.response && err.response.status === 401) {
           setError("You are not authenticated. Please log in.");
         } else {
@@ -48,14 +49,39 @@ const Home = ({ onLogout }) => {
 
     fetchUserData();
   }, []);
+
+  if (loading) {
     return (
-        <Content style={{ padding: '20px', minHeight: '280px' }}>
-            <div className="bg-white p-4 rounded-lg shadow-md">
-                <h2 className="text-2xl font-semibold">Welcome {`${username}`} to the Admin Panel</h2>
-                <p className="mt-4">Manage your platform here. Add content, users, and more!</p>
-            </div>
-        </Content>
+      <Content style={{ padding: "20px", minHeight: "280px" }}>
+        <div className="bg-white p-4 rounded-lg shadow-md">
+          <p>Loading...</p>
+        </div>
+      </Content>
     );
+  }
+
+  if (error) {
+    return (
+      <Content style={{ padding: "20px", minHeight: "280px" }}>
+        <div className="bg-white p-4 rounded-lg shadow-md">
+          <p>{error}</p>
+        </div>
+      </Content>
+    );
+  }
+
+  return (
+    <Content style={{ padding: "20px", minHeight: "280px" }}>
+      <div className="bg-white p-4 rounded-lg shadow-md">
+        <h2 className="text-2xl font-semibold">
+          Welcome {username} to the Admin Panel
+        </h2>
+        <p className="mt-4">
+          Manage your platform here. Add content, users, and more!
+        </p>
+      </div>
+    </Content>
+  );
 };
 
 export default Home;

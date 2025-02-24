@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api"; // Axios instance yang telah dikonfigurasi
-import { jwtDecode } from "jwt-decode"; // Perbaiki impor
+import { jwtDecode } from "jwt-decode"; // Import menggunakan kurung kurawal
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState("");
@@ -16,11 +16,18 @@ const Login = ({ onLogin }) => {
       if (response.status === 200) {
         const token = response.data.token; // Mengambil token dari respons data
 
+        // Pastikan token adalah string
+        if (typeof token !== "string" || !token) {
+          throw new Error("Invalid token specified: must be a string");
+        }
+
+        // Decode token untuk mendapatkan informasi pengguna
+        const decodedToken = jwtDecode(token);
+
         // Pastikan token tidak disimpan di localStorage
-        onLogin(); // Panggil callback onLogin untuk memverifikasi token
+        onLogin(token); // Panggil callback onLogin dengan token
 
         // Redirect berdasarkan role
-        const decodedToken = jwtDecode(token);
         const role = decodedToken.role;
 
         if (role === "ADMIN") {
