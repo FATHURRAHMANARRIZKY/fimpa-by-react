@@ -20,7 +20,7 @@ const Product = () => {
 
   // Fungsi untuk mengambil data dari backend
   const fetchProducts = async () => {
-    setLoading(true); // Mulai loading
+    setLoading(true);
     try {
       const response = await api.get("/products", {
         params: {
@@ -31,19 +31,19 @@ const Product = () => {
           maxPrice,
         },
       });
-      setProducts(response.data.products || []); // Pastikan produk selalu array
+      setProducts(response.data.products || []);
       setTotalProducts(response.data.total);
     } catch (error) {
-      console.error("Error fetching data", error);
       message.error("Gagal mengambil data produk.");
     } finally {
-      setLoading(false); // Selesai loading
+      setLoading(false);
     }
   };
 
   // Mengambil data saat halaman, pencarian, atau filter harga berubah
   useEffect(() => {
     fetchProducts();
+    // eslint-disable-next-line
   }, [currentPage, searchTerm, minPrice, maxPrice]);
 
   const handlePageChange = (page) => {
@@ -52,11 +52,10 @@ const Product = () => {
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset ke halaman pertama
+    setCurrentPage(1);
   };
 
   const handleCardClick = (product) => {
-    console.log("Product clicked:", product);
     setSelectedProduct(product);
   };
 
@@ -65,7 +64,7 @@ const Product = () => {
   };
 
   const handleWhatsAppClick = () => {
-    const phoneNumber = "628123456789"; // Ganti dengan nomor WhatsApp tujuan
+    const phoneNumber = "628123456789";
     const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
       whatsappText
     )}`;
@@ -94,7 +93,7 @@ const Product = () => {
         {/* Grid Layout Produk */}
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <Spin size="large" tip="Memuat produk..." />
+            <Spin size="large" />
           </div>
         ) : products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8 justify-items-center">
@@ -108,6 +107,7 @@ const Product = () => {
                       src={`http://localhost:8080${product.imageUrl}`}
                       alt={product.name}
                       className="object-cover w-full h-full rounded-t-lg"
+                      onError={(e) => (e.target.src = "")} // Gambar placeholder saat gagal
                     />
                   </div>
                 }
@@ -142,7 +142,6 @@ const Product = () => {
         key={selectedProduct?.id || "empty"}
         title={selectedProduct?.name}
         open={Boolean(selectedProduct)}
-        visible={Boolean(selectedProduct)}
         onCancel={handleCloseModal}
         onOk={handleCloseModal}
         destroyOnClose={true}

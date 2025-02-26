@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Rate, Card, Col, Row, Spin } from "antd";
-import axios from "axios";
 import { Layout } from 'antd';
 import api from "../../api";
 

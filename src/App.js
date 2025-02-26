@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useEffect, useContext } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
@@ -8,12 +8,14 @@ import api from "./api";
 import { AuthContext } from "./context/AuthContext";
 import HomePage from "./admin/HomePage"; // Import HomePage
 import NotFound from "./NotFound"; // Import NotFound
+import { Spin } from "antd"; // Optional: for loading spinner
 
 export default function App() {
   const { isLoggedIn, role, loading, verifyToken, setIsLoggedIn } =
     useContext(AuthContext);
   const navigate = useNavigate();
 
+  // Check token on initial load
   useEffect(() => {
     const verify = async () => {
       await verifyToken();
@@ -22,7 +24,7 @@ export default function App() {
   }, [verifyToken]);
 
   const handleLogin = () => {
-    verifyToken(); // Verifikasi token setelah login
+    verifyToken(); // Verifikasi token setelah login (can be omitted if auto-verified on page load)
   };
 
   const handleLogout = async () => {
@@ -37,8 +39,13 @@ export default function App() {
     }
   };
 
+  // Show loading spinner while loading
   if (loading) {
-    return <div>Loading...</div>; // Tampilkan indikator loading jika perlu
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spin size="large" /> {/* Removed the `tip` prop */}
+      </div>
+    );
   }
 
   return (
@@ -64,7 +71,7 @@ export default function App() {
           )
         }
       />
-      {/* Tambahkan Route untuk 404 Not Found sebagai Route terakhir */}
+      {/* Route untuk 404 Not Found */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

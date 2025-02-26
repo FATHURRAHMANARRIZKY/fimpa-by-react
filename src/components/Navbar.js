@@ -5,18 +5,38 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState({});
   const [profile, setProfile] = useState(null);
+
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
 
+  const handleProfile = () => {};
+
+  const handleSettings = () => {};
+
+  const handleSignOut = () => {};
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        // Ambil token dari localStorage atau tempat penyimpanan lainnya
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setIsLoggedIn(false);
+          setProfile(null);
+          return;
+        }
+
+        // Kirimkan token melalui header Authorization jika ada
         const response = await api.get("/me", {
+          headers: {
+            Authorization: `Bearer ${token}`, // Mengirimkan token jika ada
+          },
           withCredentials: true,
         });
+
         if (response.status === 200) {
           setProfile(response.data);
           setIsLoggedIn(true);
@@ -24,6 +44,10 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
       } catch (error) {
         setIsLoggedIn(false);
         setProfile(null);
+        console.error(
+          "Error fetching profile:",
+          error.response || error.message
+        );
       }
     };
 
@@ -45,13 +69,21 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
     }
   };
 
+  // Use the correct profile image URL
+
   const profileImage =
-    isLoggedIn && profile ? profile.profilePicture : "assets/users/guest.png";
-  const profileName = isLoggedIn && profile ? profile.username : "Guest";
-  // bg-opacity-30 backdrop-filter backdrop-blur-lg
+    isLoggedIn &&
+    profile &&
+    profile.profilePicture &&
+    profile.profilePicture !== ""
+      ? profile.profilePicture
+      : "/assets/users/guest.png";
+
+  const profileName =
+    isLoggedIn && profile ? profile.username.slice(0, 5) : "Guest";
   return (
     <nav className="fixed w-full top-0 z-10 right-0 shadow-md">
-      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-full backdrop-blur">
         <div className="flex justify-between items-center h-16 mx-auto max-w-7xl">
           <div className="flex justify-between items-center w-full">
             <div className="flex items-center">
@@ -164,7 +196,7 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
               <div className="relative">
                 <button
                   type="button"
-                  className="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                  className="relative flex w-24 items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 border-2 border-transparent"
                   id="user-menu-button"
                   aria-expanded={isOpen}
                   aria-haspopup="true"
@@ -196,23 +228,22 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
                         >
                           Your Profile
                         </a>
-                        <a
-                          href="#"
+                        <button
+                          onClick={handleSettings}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           role="menuitem"
                           id="user-menu-item-1"
                         >
                           Settings
-                        </a>
-                        <a
-                          href="#"
+                        </button>
+                        <button
                           onClick={handleLogout}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           role="menuitem"
                           id="user-menu-item-2"
                         >
                           Logout
-                        </a>
+                        </button>
                       </>
                     ) : (
                       <>
@@ -312,58 +343,73 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
               {/* Home content */}
               <div className="mt-16 space-y-1 px-2 pb-3 pt-2 sm:px-3">
                 <a
-                  href="#"
+                  href="#home"
                   className={`block rounded-md px-3 py-2 text-base font-medium ${
-                    activeLink === "Home"
+                    activeLink === "home"
                       ? "bg-gray-900 text-white"
-                      : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                      : "text-white hover:bg-gray-700 hover:text-white"
                   }`}
-                  aria-current={activeLink === "Home" ? "page" : undefined}
-                  onClick={() => handleNavLinkClick("Home")}
+                  aria-current={activeLink === "home" ? "page" : undefined}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavLinkClick("home");
+                  }}
                 >
                   Home
                 </a>
                 <a
-                  href="#"
+                  href="#product"
                   className={`block rounded-md px-3 py-2 text-base font-medium ${
-                    activeLink === "Product"
+                    activeLink === "product"
                       ? "bg-gray-900 text-white"
-                      : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                      : "text-white hover:bg-gray-700 hover:text-white"
                   }`}
-                  onClick={() => handleNavLinkClick("Product")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavLinkClick("product");
+                  }}
                 >
                   Product
                 </a>
                 <a
-                  href="#"
+                  href="#contact"
                   className={`block rounded-md px-3 py-2 text-base font-medium ${
-                    activeLink === "Contact"
+                    activeLink === "contact"
                       ? "bg-gray-900 text-white"
-                      : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                      : "text-white hover:bg-gray-700 hover:text-white"
                   }`}
-                  onClick={() => handleNavLinkClick("Contact")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavLinkClick("contact");
+                  }}
                 >
                   Contact
                 </a>
                 <a
-                  href="#"
+                  href="#reviews"
                   className={`block rounded-md px-3 py-2 text-base font-medium ${
-                    activeLink === "Reviews"
+                    activeLink === "reviews"
                       ? "bg-gray-900 text-white"
-                      : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                      : "text-white hover:bg-gray-700 hover:text-white"
                   }`}
-                  onClick={() => handleNavLinkClick("Reviews")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavLinkClick("reviews");
+                  }}
                 >
                   Reviews
                 </a>
                 <a
-                  href="#"
+                  href="#about"
                   className={`block rounded-md px-3 py-2 text-base font-medium ${
-                    activeLink === "About"
+                    activeLink === "about"
                       ? "bg-gray-900 text-white"
-                      : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                      : "text-white hover:bg-gray-700 hover:text-white"
                   }`}
-                  onClick={() => handleNavLinkClick("About")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavLinkClick("about");
+                  }}
                 >
                   About
                 </a>
@@ -409,24 +455,24 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
                   </button>
                 </div>
                 <div className="mt-3 space-y-1 px-2">
-                  <a
-                    href="#"
+                  <button
+                    onClick={handleProfile}
                     className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
                   >
                     Your Profile
-                  </a>
-                  <a
-                    href="#"
+                  </button>
+                  <button
+                    onClick={handleSettings}
                     className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
                   >
                     Settings
-                  </a>
-                  <a
-                    href="#"
+                  </button>
+                  <button
+                    onClick={handleSignOut}
                     className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
                   >
                     Sign out
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
