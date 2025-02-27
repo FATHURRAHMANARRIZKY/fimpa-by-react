@@ -3,7 +3,7 @@ import { Card, Pagination, Input, Modal, Button, message, Spin } from "antd";
 import api from "../../api"; // Import the custom Axios instance
 
 const Product = () => {
-  const [products, setProducts] = useState([]); // Inisialisasi dengan array kosong
+  const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
@@ -14,10 +14,6 @@ const Product = () => {
   const [loading, setLoading] = useState(false);
   const pageSize = 3;
 
-  // State untuk Filter Harga
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(1000000);
-
   // Fungsi untuk mengambil data dari backend
   const fetchProducts = async () => {
     setLoading(true);
@@ -27,8 +23,6 @@ const Product = () => {
           page: currentPage - 1,
           size: pageSize,
           search: searchTerm,
-          minPrice,
-          maxPrice,
         },
       });
       setProducts(response.data.products || []);
@@ -40,11 +34,9 @@ const Product = () => {
     }
   };
 
-  // Mengambil data saat halaman, pencarian, atau filter harga berubah
   useEffect(() => {
     fetchProducts();
-    // eslint-disable-next-line
-  }, [currentPage, searchTerm, minPrice, maxPrice]);
+  }, [currentPage, searchTerm]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -71,16 +63,19 @@ const Product = () => {
     window.open(url, "_blank");
   };
 
+  useEffect(() => {
+    if (selectedProduct) {
+      setWhatsappText(
+        `Halo, saya tertarik dengan produk ${selectedProduct.name}!`
+      );
+    }
+  }, [selectedProduct]);
+
   return (
-    <div
-      className={`bg-blue-200 flex flex-col justify-between h-full transition-all duration-300 ${
-        selectedProduct ? "backdrop-blur-sm" : ""
-      }`}
-    >
+    <div className="bg-blue-200 flex flex-col justify-between h-full transition-all duration-300">
       <div className="container mx-auto px-4 py-11 max-w-screen-xl">
         <h2 className="text-3xl font-bold text-center mb-8">Produk Kami</h2>
 
-        {/* Search Bar */}
         <div className="flex justify-center mb-4">
           <Input
             placeholder="Cari produk berdasarkan nama atau kategori..."
@@ -90,7 +85,6 @@ const Product = () => {
           />
         </div>
 
-        {/* Grid Layout Produk */}
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <Spin size="large" />
@@ -106,8 +100,10 @@ const Product = () => {
                     <img
                       src={`http://localhost:8080${product.imageUrl}`}
                       alt={product.name}
-                      className="object-cover w-full h-full rounded-t-lg"
-                      onError={(e) => (e.target.src = "")} // Gambar placeholder saat gagal
+                      className="object-cover w-full h-full rounded-t-lg shadow-md"
+                      onError={(e) =>
+                        (e.target.src = "https://via.placeholder.com/150")
+                      }
                     />
                   </div>
                 }
@@ -126,7 +122,6 @@ const Product = () => {
           <p className="text-center">Tidak ada produk ditemukan.</p>
         )}
 
-        {/* Pagination */}
         <div className="flex justify-center mt-8">
           <Pagination
             current={currentPage}
@@ -137,10 +132,8 @@ const Product = () => {
         </div>
       </div>
 
-      {/* Modal untuk Detail Produk */}
       <Modal
         key={selectedProduct?.id || "empty"}
-        title={selectedProduct?.name}
         open={Boolean(selectedProduct)}
         onCancel={handleCloseModal}
         onOk={handleCloseModal}
@@ -152,22 +145,41 @@ const Product = () => {
             value={whatsappText}
             onChange={(e) => setWhatsappText(e.target.value)}
           />,
-          <Button key="wa-button" type="primary" onClick={handleWhatsAppClick}>
-            Hubungi via WhatsApp
+          <Button
+            key="wa-button"
+            type="primary"
+            className="my-2"
+            onClick={handleWhatsAppClick}
+          >
+            <i className="fa-brands fa-whatsapp fa-shake"></i> Hubungi via
+            WhatsApp
           </Button>,
         ]}
-        transitionName="zoom"
-        maskTransitionName="fade"
       >
         <img
           src={`http://localhost:8080${selectedProduct?.imageUrl}`}
           alt={selectedProduct?.name}
-          className="object-cover w-full h-48 mb-4"
+          className="object-cover w-full h-48 mb-4 my-3 rounded-lg shadow-xl border-2 border-gray-300"
         />
+        <h2 className="text-lg font-bold">{selectedProduct?.name}</h2>
         <p>{selectedProduct?.description}</p>
         <p className="text-gray-400 text-xs">
           Kategori: {selectedProduct?.category}
         </p>
+        {selectedProduct && (
+          <p>
+            Harga:{" "}
+            {new Intl.NumberFormat("id-ID", {
+              style: "currency",
+              currency: "IDR",
+            }).format(selectedProduct.minPrice)}{" "}
+            -{" "}
+            {new Intl.NumberFormat("id-ID", {
+              style: "currency",
+              currency: "IDR",
+            }).format(selectedProduct.maxPrice)}
+          </p>
+        )}
       </Modal>
     </div>
   );

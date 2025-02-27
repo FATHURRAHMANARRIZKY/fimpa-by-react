@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
   Layout,
   Table,
   Form,
   Input,
-  InputNumber,
   Upload,
   Button,
   Space,
@@ -28,42 +26,49 @@ const ProductPage = () => {
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
   const [form] = Form.useForm();
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 3; // Ukuran per halaman
 
-  const fetchProducts = async () => {
+  // Fetch produk saat halaman berubah
+  useEffect(() => {
+    fetchProducts(currentPage, pageSize);
+  }, [currentPage]);
+
+  const fetchProducts = async (page, size) => {
+    setLoading(true);
     try {
-      const response = await api.get("/products");
+      const response = await api.get(`/products?page=${page - 1}&size=${size}`);
       setProducts(response.data.products);
+      setTotalProducts(response.data.total);
     } catch (error) {
       console.error("Error fetching data:", error);
       message.error("Gagal mengambil data produk.");
+    } finally {
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   const handleSaveProduct = async (values) => {
     const formData = new FormData();
     formData.append("name", values.name);
     formData.append("description", values.description);
     formData.append("category", values.category);
-    formData.append("price", values.price);
+    formData.append("minPrice", parseFloat(values.minPrice) || 0);
+    formData.append("maxPrice", parseFloat(values.maxPrice) || 0);
 
     if (fileList.length > 0) {
       formData.append("imageUrl", fileList[0].originFileObj);
+    } else if (selectedProduct?.imageUrl) {
+      formData.append("imageUrl", selectedProduct.imageUrl);
     }
 
     setLoading(true);
     try {
       if (selectedProduct) {
-        await api.put(
-          `/products/${selectedProduct.id}`,
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
+        await api.put(`/products/${selectedProduct.id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
         message.success("Produk berhasil diperbarui!");
       } else {
         await api.post("/products/add", formData, {
@@ -72,7 +77,7 @@ const ProductPage = () => {
         message.success("Produk berhasil ditambahkan!");
       }
 
-      fetchProducts();
+      fetchProducts(currentPage, pageSize);
       setIsModalVisible(false);
       form.resetFields();
       setSelectedProduct(null);
@@ -88,19 +93,15 @@ const ProductPage = () => {
   const handleDeleteProduct = async (id) => {
     setLoading(true);
     try {
-      await api.delete(`/api/products/${id}`);
+      await api.delete(`/products/${id}`);
       message.success("Produk berhasil dihapus!");
-      fetchProducts();
+      fetchProducts(currentPage, pageSize);
     } catch (error) {
       console.error("Error deleting product:", error);
       message.error("Gagal menghapus produk.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleImageChange = ({ fileList: newFileList }) => {
-    setFileList(newFileList);
   };
 
   const columns = [
@@ -120,14 +121,24 @@ const ProductPage = () => {
     { title: "Deskripsi", dataIndex: "description", key: "description" },
     { title: "Kategori", dataIndex: "category", key: "category" },
     {
-      title: "Harga",
-      dataIndex: "price",
-      key: "price",
-      render: (price) =>
+      title: "Harga Minimum",
+      dataIndex: "minPrice",
+      key: "minPrice",
+      render: (minPrice) =>
         new Intl.NumberFormat("id-ID", {
           style: "currency",
           currency: "IDR",
-        }).format(price),
+        }).format(minPrice),
+    },
+    {
+      title: "Harga Maximum",
+      dataIndex: "maxPrice",
+      key: "maxPrice",
+      render: (maxPrice) =>
+        new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+        }).format(maxPrice),
     },
     {
       title: "Aksi",
@@ -138,7 +149,7 @@ const ProductPage = () => {
             type="primary"
             icon={<EditOutlined />}
             onClick={() => {
-              form.setFieldsValue({ ...record, image: null });
+              form.setFieldsValue({ ...record });
               setSelectedProduct(record);
               setIsModalVisible(true);
 
@@ -194,7 +205,12 @@ const ProductPage = () => {
           rowKey="id"
           bordered
           loading={loading}
-          pagination={false}
+          pagination={{
+            current: currentPage,
+            pageSize,
+            total: totalProducts,
+            onChange: (page) => setCurrentPage(page),
+          }}
         />
 
         <Modal
@@ -208,44 +224,51 @@ const ProductPage = () => {
           }}
           footer={null}
         >
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSaveProduct}
-            initialValues={selectedProduct || {}}
-          >
+          <Form form={form} layout="vertical" onFinish={handleSaveProduct}>
             <Form.Item
               name="name"
               label="Nama Produk"
-              rules={[{ required: true, message: "Masukkan nama produk" }]}
+              rules={[{ required: true }]}
             >
               <Input placeholder="Nama Produk" />
             </Form.Item>
             <Form.Item
               name="description"
               label="Deskripsi"
-              rules={[{ required: true, message: "Masukkan deskripsi" }]}
+              rules={[{ required: true }]}
             >
               <Input.TextArea placeholder="Deskripsi Produk" />
             </Form.Item>
             <Form.Item
               name="category"
               label="Kategori"
-              rules={[{ required: true, message: "Masukkan kategori" }]}
+              rules={[{ required: true }]}
             >
               <Input placeholder="Kategori Produk" />
             </Form.Item>
             <Form.Item
-              name="price"
-              label="Harga"
-              rules={[{ required: true, message: "Masukkan harga produk" }]}
+              name="minPrice"
+              label="Harga Minimum"
+              rules={[{ required: true }]}
             >
-              <Input
-                type="number"
-                placeholder="Harga Produk"
-                step="0.01"
-                min="0"
-              />
+              <Input type="number" min="0" />
+            </Form.Item>
+            <Form.Item
+              name="maxPrice"
+              label="Harga Maximum"
+              rules={[{ required: true }]}
+            >
+              <Input type="number" min="0" />
+            </Form.Item>
+            <Form.Item name="imageUrl" label="Gambar Produk">
+              <Upload
+                listType="picture"
+                beforeUpload={() => false}
+                fileList={fileList}
+                onChange={({ fileList }) => setFileList(fileList.slice(-1))}
+              >
+                <Button icon={<UploadOutlined />}>Unggah Gambar</Button>
+              </Upload>
             </Form.Item>
 
             <Button type="primary" htmlType="submit" loading={loading}>

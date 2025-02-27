@@ -52,9 +52,33 @@ const ListUser = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const roleResponse = await api.get("/verify-token");
+      const roleData = roleResponse.data;
+
+      setUsers((prevUsers) =>
+        prevUsers.map((user) => ({
+          ...user,
+          role: roleData[user.id] || "user",
+        }))
+      );
+
+      setAdmins((prevAdmins) =>
+        prevAdmins.map((admin) => ({
+          ...admin,
+          role: roleData[admin.id] || "admin",
+        }))
+      );
+    } catch (error) {
+      message.error("Gagal mengambil data role pengguna.");
+    }
+  };
+
   useEffect(() => {
-    fetchUsers(); // Ambil data pengguna saat komponen dimuat
-    fetchAdmins(); // Ambil data admin saat komponen dimuat
+    fetchUsers();
+    fetchAdmins();
+    fetchRoles();
   }, []);
 
   // Handle delete user/admin
@@ -83,23 +107,23 @@ const ListUser = () => {
     setLoading(true); // Set loading for save
     try {
       const url =
-        currentUser && currentUser.role === "admin" ? `/admins` : `/users`;
+        currentUser && currentUser.role === "ADMIN" ? `/admins` : `/users`;
       if (currentUser) {
         // Update user/admin
         await api.put(`${url}/${currentUser.id}`, values);
         message.success(
           `${
-            currentUser.role === "admin" ? "Admin" : "Pengguna"
+            currentUser.role === "ADMIN" ? "ADMIN" : "Pengguna"
           } berhasil diperbarui!`
         );
       } else {
         // Add new user/admin
         const registerUrl =
-          values.role === "admin" ? "/register" : "/register-user";
+          values.role === "ADMIN" ? "/register" : "/register-user";
         await api.post(registerUrl, values);
         message.success(
           `${
-            values.role === "admin" ? "Admin" : "Pengguna"
+            values.role === "ADMIN" ? "ADMIN" : "Pengguna"
           } berhasil ditambahkan!`
         );
       }
@@ -123,13 +147,20 @@ const ListUser = () => {
   };
 
   // Gabungkan data pengguna dan admin
-  const combinedData = [...users, ...admins];
 
   // Kolom untuk tabel Ant Design
   const columns = [
     { title: "Username", dataIndex: "username", key: "username" },
     { title: "Email", dataIndex: "email", key: "email" },
-    { title: "Role", dataIndex: "role", key: "role" },
+    {
+      title: "Role",
+      dataIndex: "role",
+      key: "role",
+      render: (text, record) => {
+        // Tampilkan role hanya jika role ada di dalam data
+        return record.role ? record.role : "Tidak ada role";
+      },
+    },
     {
       title: "Aksi",
       key: "action",
@@ -157,6 +188,8 @@ const ListUser = () => {
       ),
     },
   ];
+  const combinedData = [...users, ...admins];
+  const filteredData = combinedData.filter((record) => record.role === "user");
   return (
     <Content style={{ padding: "24px", backgroundColor: "#f0f2f5" }}>
       <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -175,7 +208,7 @@ const ListUser = () => {
 
         {/* Tabel Ant Design */}
         <Table
-          dataSource={users}
+          dataSource={combinedData}
           columns={columns}
           rowKey="id"
           bordered

@@ -12,19 +12,18 @@ import {
   notification,
 } from "antd";
 import api from "../../api"; // Correct import path based on your folder structure
-import { jwtDecode } from "jwt-decode"; // Correct import for jwtDecode
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 const CustomerReviews = ({ role, token }) => {
-  const [customerReviews, setCustomerReviews] = useState([]); // Inisialisasi dengan array kosong
+  const [customerReviews, setCustomerReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [user, setUser] = useState({ username: "", email: "" });
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(0);
-  const navigate = useNavigate(); // Initialize navigate hook
+  const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const calculateAverageRating = (reviews) => {
     if (!Array.isArray(reviews) || reviews.length === 0) return 0;
@@ -34,12 +33,11 @@ const CustomerReviews = ({ role, token }) => {
 
   const reviewCount = customerReviews.length;
 
-  // Fetch CustomerReviews from the backend
   useEffect(() => {
     api
-      .get("/ratings") // Using the custom Axios instance
+      .get("/ratings")
       .then((response) => {
-        setCustomerReviews(response.data || []); // Pastikan data selalu array
+        setCustomerReviews(response.data || []);
         setLoading(false);
       })
       .catch((error) => {
@@ -48,16 +46,67 @@ const CustomerReviews = ({ role, token }) => {
       });
   }, []);
 
-  // Decode the token to get the username or email
   useEffect(() => {
-    if (token && typeof token === "string") {
-      const decodedToken = jwtDecode(token);
-      setName(decodedToken.username || decodedToken.sub); // Sesuaikan sesuai struktur token Anda
-      setEmail(decodedToken.email || decodedToken.sub); // Sesuaikan sesuai struktur token Anda
+    if (token) {
+      api
+        .get("/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          const userData = response.data;
+          setUser({
+            username: userData.username || "No Username",
+            email: userData.email || "No Email",
+          });
+          console.log("User data fetched:", userData); // Check the fetched user data
+        })
+        .catch((error) => {
+          console.error("Error fetching user data:", error);
+          notification.error({
+            message: "Session Expired",
+            description: "Please login again.",
+          });
+          navigate("/login");
+        });
     }
-  }, [token]);
+  }, [token, navigate]);
 
-  // Handle form submission
+  useEffect(() => {
+    api
+      .get("/ratings")
+      .then((response) => {
+        setCustomerReviews(response.data || []);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching CustomerReviews:", error);
+        setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (token) {
+      api
+        .get("/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          setUser({
+            username: response.data.username || "No Username",
+            email: response.data.email || "No Email",
+          });
+        })
+        .catch((error) => {
+          console.error("Error fetching user data:", error);
+          notification.error({
+            message: "Session Expired",
+            description: "Please login again.",
+          });
+          navigate("/login");
+        });
+    }
+  }, [token, navigate]);
+
   const handleSubmit = () => {
     if (!comment || rating === 0) {
       notification.error({
@@ -67,15 +116,17 @@ const CustomerReviews = ({ role, token }) => {
       return;
     }
 
+    setSubmitting(true);
     const newReview = {
-      name,
+      name: user.username,
+      email: user.email,
       comment,
       rating,
       createdAt: new Date().toISOString(),
     };
 
     api
-      .post("/ratings", newReview) // Post request using the custom Axios instance
+      .post("/ratings", newReview)
       .then((response) => {
         setCustomerReviews([...customerReviews, response.data]);
         setShowForm(false);
@@ -93,10 +144,10 @@ const CustomerReviews = ({ role, token }) => {
           description:
             "There was an issue submitting your review. Please try again later.",
         });
-      });
+      })
+      .finally(() => setSubmitting(false));
   };
 
-  // Handle unauthenticated user trying to submit a review
   const handleUnauthenticatedSubmit = () => {
     setShowLoginPrompt(true);
   };
@@ -104,7 +155,6 @@ const CustomerReviews = ({ role, token }) => {
   return (
     <div className="container mx-auto py-10">
       <h2 className="text-2xl font-bold mb-4">Customer Reviews</h2>
-
       <div className="flex items-center mb-8">
         <h3 className="text-4xl font-bold mr-2">
           {calculateAverageRating(customerReviews)}
@@ -117,9 +167,7 @@ const CustomerReviews = ({ role, token }) => {
           {reviewCount.toLocaleString()} Customer Reviews
         </p>
       </div>
-
       <hr className="border-gray-300 mb-4" />
-
       <Row gutter={[16, 16]}>
         {loading ? (
           <div className="flex justify-center items-center w-full">
@@ -142,7 +190,6 @@ const CustomerReviews = ({ role, token }) => {
           <p className="text-center">Tidak ada ulasan ditemukan.</p>
         )}
       </Row>
-
       {role === "USER" ? (
         <div className="text-center mt-8">
           <Button type="primary" onClick={() => setShowForm(true)}>
@@ -156,7 +203,6 @@ const CustomerReviews = ({ role, token }) => {
           </Button>
         </div>
       )}
-
       <Modal
         title="Submit a Review"
         open={showForm}
@@ -164,11 +210,11 @@ const CustomerReviews = ({ role, token }) => {
         onOk={handleSubmit}
       >
         <Form layout="vertical">
-          <Form.Item label="Name">
-            <Input value={name} readOnly />
+          <Form.Item label="Username">
+            <Input value={user.username} readOnly />
           </Form.Item>
           <Form.Item label="Email">
-            <Input value={email} readOnly />
+            <Input value={user.email} readOnly />
           </Form.Item>
           <Form.Item label="Comment" required>
             <Input.TextArea
@@ -186,7 +232,6 @@ const CustomerReviews = ({ role, token }) => {
           </Form.Item>
         </Form>
       </Modal>
-
       <Modal
         title="Login Required"
         open={showLoginPrompt}
@@ -197,7 +242,7 @@ const CustomerReviews = ({ role, token }) => {
             type="primary"
             onClick={() => {
               setShowLoginPrompt(false);
-              navigate("/login"); // Navigate to login page
+              navigate("/login");
             }}
           >
             Go to Login

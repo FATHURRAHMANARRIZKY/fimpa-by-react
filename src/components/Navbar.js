@@ -1,11 +1,29 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
+import { AuthContext } from "../context/AuthContext";
 import api from "../api";
 
 export default function Navbar({ activeLink, handleNavLinkClick }) {
+  const { isLoggedIn, user, setUser } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [profile, setProfile] = useState(null);
+
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        console.log("Klik di luar dropdown, menutup dropdown");
+        setIsOpen(false);
+      } else {
+        console.log("Klik di dalam dropdown, tetap terbuka");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -17,75 +35,30 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
 
   const handleSignOut = () => {};
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        // Ambil token dari localStorage atau tempat penyimpanan lainnya
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          setIsLoggedIn(false);
-          setProfile(null);
-          return;
-        }
-
-        // Kirimkan token melalui header Authorization jika ada
-        const response = await api.get("/me", {
-          headers: {
-            Authorization: `Bearer ${token}`, // Mengirimkan token jika ada
-          },
-          withCredentials: true,
-        });
-
-        if (response.status === 200) {
-          setProfile(response.data);
-          setIsLoggedIn(true);
-        }
-      } catch (error) {
-        setIsLoggedIn(false);
-        setProfile(null);
-        console.error(
-          "Error fetching profile:",
-          error.response || error.message
-        );
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
-  const toggleDropdown = () => {
-    setIsOpen(!isOpen);
-  };
-
   const handleLogout = async () => {
     try {
       await api.post("/logout", {}, { withCredentials: true });
-      setIsLoggedIn(false);
-      setProfile(null);
-      window.location.reload(); // Reload the page to reset the state
+      setUser(null);
+      window.location.reload();
     } catch (error) {
       console.error("Error during logout:", error);
     }
   };
 
-  // Use the correct profile image URL
-
   const profileImage =
-    isLoggedIn &&
-    profile &&
-    profile.profilePicture &&
-    profile.profilePicture !== ""
-      ? profile.profilePicture
+    isLoggedIn && user?.profilePicture
+      ? user.profilePicture
       : "/assets/users/guest.png";
-
   const profileName =
-    isLoggedIn && profile ? profile.username.slice(0, 5) : "Guest";
+    isLoggedIn && user?.username ? user.username.slice(0, 6) : "Guest";
+
+  const ProfileEmail = isLoggedIn && user?.email ? user.email : "";
+
   return (
-    <nav className="fixed w-full top-0 z-10 right-0 shadow-md">
-      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-full backdrop-blur">
-        <div className="flex justify-between items-center h-16 mx-auto max-w-7xl">
-          <div className="flex justify-between items-center w-full">
+    <nav className="fixed w-full top-0 z-10 right-0 shadow-md bg-white/80">
+      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-full">
+        <div className="flex justify-between items-center h-14 sm:h-16 mx-auto max-w-6xl">
+          <div className="flex justify-between items-center w-full flex-wrap">
             <div className="flex items-center">
               <img
                 className="w-8 h-8"
@@ -171,14 +144,14 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
                 </a>
               </div>
             </div>
-            <div className="relative ml-3 space-x-4 lg:flex hidden">
+            <div className="relative ml-2 space-x-2 lg:flex hidden">
               <button
                 type="button"
-                className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gray-800 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
               >
                 <span className="sr-only">View notifications</span>
                 <svg
-                  className="h-6 w-6"
+                  className="w-6 h-6"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="1.5"
@@ -193,22 +166,24 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
                 </svg>
               </button>
 
-              <div className="relative">
+              <div ref={dropdownRef} className="relative">
                 <button
                   type="button"
-                  className="relative flex w-24 items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 border-2 border-transparent"
+                  className="relative flex w-26 items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 border-2 border-transparent"
                   id="user-menu-button"
                   aria-expanded={isOpen}
                   aria-haspopup="true"
-                  onClick={toggleDropdown}
+                  onClick={() => setIsOpen(!isOpen)}
                 >
                   <span className="sr-only">Open user menu</span>
                   <img
-                    className="h-8 w-8 rounded-full"
+                    className="h-10 w-10 rounded-full"
                     src={profileImage}
                     alt="Profile"
                   />
-                  <span className="ml-2 text-white">{profileName}</span>
+                  <span className="mx-2 text-white leading-none">
+                    {profileName}
+                  </span>
                 </button>
 
                 {isOpen && (
@@ -221,7 +196,7 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
                     {isLoggedIn ? (
                       <>
                         <a
-                          href={`/${profile.email}`}
+                          href={`/${ProfileEmail.email}`}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           role="menuitem"
                           id="user-menu-item-0"
@@ -419,16 +394,16 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
                   <div className="shrink-0">
                     <img
                       className="h-10 w-10 rounded-full"
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                      src={profileImage}
                       alt=""
                     />
                   </div>
                   <div className="ml-3">
                     <div className="text-base font-medium text-white">
-                      Tom Cook
+                      {profileName}
                     </div>
                     <div className="text-sm font-medium text-gray-400">
-                      tom@example.com
+                      {ProfileEmail}
                     </div>
                   </div>
                   <button

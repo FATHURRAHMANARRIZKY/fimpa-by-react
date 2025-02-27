@@ -50,7 +50,10 @@ export default function App() {
 
   return (
     <Routes>
+      {/* Home route */}
       <Route path="/" element={<ContentHome role={role} />} />
+
+      {/* Login route */}
       <Route
         path="/login"
         element={
@@ -61,6 +64,8 @@ export default function App() {
           )
         }
       />
+
+      {/* Admin route */}
       <Route
         path="/admin"
         element={
@@ -71,7 +76,8 @@ export default function App() {
           )
         }
       />
-      {/* Route untuk 404 Not Found */}
+
+      {/* Catch-all route for 404 Not Found */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

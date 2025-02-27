@@ -42,7 +42,7 @@ const SubHeader = () => {
           <span className="ml-2"></span>{" "}
           {/* Tambahkan margin kiri untuk jarak */}
           <a href="_blank" onClick={handleWhatsAppClick}>
-            <i className="fa-brands fa-whatsapp fa-bounce text-2xl"></i>
+            <i className="fa-brands fa-whatsapp fa-shake text-2xl"></i>
           </a>
         </div>
       </div>
