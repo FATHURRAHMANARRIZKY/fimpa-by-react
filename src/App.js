@@ -2,13 +2,14 @@ import React, { useEffect, useContext } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
-import Login from "./admin/Login";
+import Login from "./auth/Login";
 import ContentHome from "./components/Content";
 import api from "./api";
 import { AuthContext } from "./context/AuthContext";
 import HomePage from "./admin/HomePage"; // Import HomePage
 import NotFound from "./NotFound"; // Import NotFound
 import { Spin } from "antd"; // Optional: for loading spinner
+import Register from "./auth/Register";
 
 export default function App() {
   const { isLoggedIn, role, loading, verifyToken, setIsLoggedIn } =
@@ -73,6 +74,18 @@ export default function App() {
             <HomePage onLogout={handleLogout} />
           ) : (
             <Navigate to="/login" />
+          )
+        }
+      />
+
+      {/* Register route */}
+      <Route
+        path="/register"
+        element={
+          isLoggedIn ? (
+            <Navigate to={role === "ADMIN" ? "/admin" : "/"} />
+          ) : (
+            <Register />
           )
         }
       />
