@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
 import api from "../../api";
 
@@ -24,13 +23,13 @@ const ContactLink = () => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center space-y-4 text-sm">
+    <div className="items-center space-y-4 text-sm">
       {profile.instagramProfile && (
         <a
           href={`https://instagram.com/@${profile.instagramProfile}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center text-center no-underline"
+          className="items-center text-center no-underline"
         >
           <FaInstagram className="cursor-pointer hover:text-pink-500 text-xl" />
           <span>{profile.instagramProfile}</span>
@@ -41,7 +40,7 @@ const ContactLink = () => {
           href={`https://facebook.com/${profile.facebookProfile}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center text-center no-underline"
+          className="items-center text-center no-underline"
         >
           <FaFacebook className="cursor-pointer hover:text-blue-600 text-xl" />
           <span>{profile.facebookProfile}</span>
@@ -52,7 +51,7 @@ const ContactLink = () => {
           href={`https://twitter.com/${profile.twitterProfile}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center text-center no-underline"
+          className="items-center text-center no-underline"
         >
           <FaTwitter className="cursor-pointer hover:text-blue-500 text-xl" />
           <span>{profile.twitterProfile}</span>
@@ -63,7 +62,7 @@ const ContactLink = () => {
           href={`https://tiktok.com/@${profile.tiktokProfile}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center text-center no-underline"
+          className="items-center text-center no-underline"
         >
           <FaTiktok className="cursor-pointer hover:text-black text-xl" />
           <span>{profile.tiktokProfile}</span>
