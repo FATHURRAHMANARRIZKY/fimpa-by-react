@@ -8,22 +8,17 @@ const { Content } = Layout;
 const ViewReviews = () => {
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    // Fetch reviews from the backend
     useEffect(() => {
         api
-            .get("/ratings") // Replace with actual backend URL
+            .get("/ratings")
             .then((response) => {
                 setReviews(response.data);
                 setLoading(false);
             })
             .catch((error) => {
-                console.error("Error fetching reviews:", error);
                 setLoading(false);
             });
     }, []);
-
-    // Calculate average rating
     const calculateAverageRating = (reviews) => {
         if (reviews.length === 0) return 0;
         const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
@@ -63,7 +58,8 @@ const ViewReviews = () => {
                                     <Rate disabled value={review.rating} />
                                     <p>{review.comment}</p>
                                     <p className="text-gray-500">
-                                        {new Date(review.createdAt).toLocaleString()}
+                                    {new Date(review.createdAt).toLocaleDateString()}
+
                                     </p>
                                 </Card>
                             </Col>

@@ -18,7 +18,6 @@ const ContactLink = () => {
         setProfile(response.data);
       })
       .catch((error) => {
-        console.error("Error fetching profile data", error);
       });
   }, []);
 

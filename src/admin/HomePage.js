@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Layout } from "antd";
 import Sidebar from "./Home-Page-Components/Side-Navbar";
-import HeaderComponent from "./Home-Page-Components/Header";
 import Home from "./Home-Page-Components/Home";
 import ProductPage from "./Home-Page-Components/ProductInput";
 import ViewReviews from "./Home-Page-Components/ViewReviews";

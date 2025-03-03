@@ -12,10 +12,8 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        console.log("Klik di luar dropdown, menutup dropdown");
         setIsOpen(false);
       } else {
-        console.log("Klik di dalam dropdown, tetap terbuka");
       }
     };
 
@@ -40,9 +38,7 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
       await api.post("/logout", {}, { withCredentials: true });
       setUser(null);
       window.location.reload();
-    } catch (error) {
-      console.error("Error during logout:", error);
-    }
+    } catch (error) {}
   };
 
   const profileImage =
@@ -429,25 +425,48 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
                     </svg>
                   </button>
                 </div>
+
                 <div className="mt-3 space-y-1 px-2">
-                  <button
-                    onClick={handleProfile}
-                    className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
-                  >
-                    Your Profile
-                  </button>
-                  <button
-                    onClick={handleSettings}
-                    className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
-                  >
-                    Settings
-                  </button>
-                  <button
-                    onClick={handleSignOut}
-                    className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
-                  >
-                    Sign out
-                  </button>
+                  {isLoggedIn ? (
+                    <>
+                      <a href={`/${ProfileEmail.email}`}
+                        className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
+                      >
+                        Your Profile
+                      </a>
+                      <button
+                        onClick={handleSettings}
+                        className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
+                      >
+                        Settings
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
+                      >
+                        Sign out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <a
+                        href="/login"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                        id="user-menu-item-0"
+                      >
+                        Login
+                      </a>
+                      <a
+                        href="/register"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                        id="user-menu-item-1"
+                      >
+                        Register
+                      </a>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

@@ -1,57 +1,3 @@
-// import React, { createContext, useState, useEffect } from "react";
-// import api from "../api";
-
-// export const AuthContext = createContext();
-
-// export const AuthProvider = ({ children }) => {
-//   const [isLoggedIn, setIsLoggedIn] = useState(false);
-//   const [role, setRole] = useState("guest");
-//   const [user, setUser] = useState(null);
-//   const [loading, setLoading] = useState(true);
-
-//   const verifyToken = async () => {
-//     try {
-//       const response = await api.get("/verify-token", {
-//         withCredentials: true,
-//       });
-
-//       if (response.status === 200 && response.data.role) {
-//         setIsLoggedIn(true);
-//         setRole(response.data.role);
-
-//         // Ambil data user setelah token diverifikasi
-//         const profileResponse = await api.get("/me", { withCredentials: true });
-//         if (profileResponse.status === 200) {
-//           setUser(profileResponse.data);
-//         }
-//       } else {
-//         setIsLoggedIn(false);
-//         setRole("guest");
-//         setUser(null);
-//       }
-//     } catch (error) {
-//       setIsLoggedIn(false);
-//       setRole("guest");
-//       setUser(null);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     verifyToken();
-//   }, []);
-
-//   return (
-//     <AuthContext.Provider
-//       value={{ isLoggedIn, role, user, loading, verifyToken, setUser }}
-//     >
-//       {children}
-//     </AuthContext.Provider>
-//   );
-// };
-
-
 import React, { createContext, useState, useEffect } from "react";
 import api from "../api";
 
@@ -64,22 +10,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const verifyToken = async () => {
-    // Cek apakah ada token di cookie atau localStorage
-    const tokenExists = document.cookie.includes("token"); // Ganti dengan nama token yang digunakan
-
-    if (!tokenExists) {
-      console.warn("User belum login, skip verifikasi token.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const response = await api.get("/verify-token", { withCredentials: true });
+      const response = await api.get("/verify-token", {
+        withCredentials: true,  // Important: Ensure the cookie is sent
+      });
+
+      // Check if token is valid and response contains the role
       if (response.status === 200 && response.data.role) {
         setIsLoggedIn(true);
         setRole(response.data.role);
 
-        // Ambil data user setelah token diverifikasi
+        // Fetch user profile after token verification
         const profileResponse = await api.get("/me", { withCredentials: true });
         if (profileResponse.status === 200) {
           setUser(profileResponse.data);
@@ -90,25 +31,26 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
       }
     } catch (error) {
-      if (error.response?.status !== 401) {
-        console.error("Error verifying token:", error);
-      }
       setIsLoggedIn(false);
       setRole("guest");
       setUser(null);
     } finally {
-      setLoading(false);
+      setLoading(false);  // Set loading state to false after verifying
     }
   };
 
   useEffect(() => {
-    verifyToken();
-  }, []);
+    verifyToken();  // Trigger token verification when the component mounts
+  }, []);  // Empty dependency array ensures it runs once on mount
+
+  // Render loading state while verification is happening
+  if (loading) {
+    return <div>Loading...</div>;  // You can replace this with a spinner component
+  }
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, role, user, loading, verifyToken, setUser }}>
+    <AuthContext.Provider value={{ isLoggedIn, role, user, verifyToken, setUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
-

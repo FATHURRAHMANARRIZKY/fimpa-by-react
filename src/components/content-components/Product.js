@@ -36,6 +36,7 @@ const Product = () => {
 
   useEffect(() => {
     fetchProducts();
+    // eslint-disable-next-line
   }, [currentPage, searchTerm]);
 
   const handlePageChange = (page) => {

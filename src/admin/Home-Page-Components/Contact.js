@@ -10,20 +10,23 @@ import {
   Input,
   Row,
   Col,
+  Select,
 } from "antd";
-import { EditOutlined } from "@ant-design/icons";
+import { EditOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import api from "../../api";
 
 const { Content } = Layout;
+const { Option } = Select;
 
 const Contact = () => {
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState({}); // Initialize with an empty object
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentProfile, setCurrentProfile] = useState(null);
+  const [isAdding, setIsAdding] = useState(false); // To distinguish between adding and editing
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
-  // Ambil data profil dari server
+  // Fetch profile data from the server
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -31,21 +34,41 @@ const Contact = () => {
   const fetchProfile = async () => {
     try {
       const response = await api.get("/contact");
-      setProfile(response.data);
+  
+      // Transform the response data into an object with mediasocial as the key
+      const transformedProfile = response.data.reduce((acc, { name, mediasocial }) => {
+        acc[mediasocial] = name; // Use mediasocial as the key and name as the value
+        return acc;
+      }, {});
+  
+      setProfile(transformedProfile); // Set the transformed profile data
     } catch (error) {
-      console.error("Error fetching profile data", error);
       message.error("Gagal mengambil data profile.");
     }
   };
+  
+  
 
-  // Handle simpan profil
+  // Handle saving profile (either add or edit)
   const handleSaveProfile = async (values) => {
     setLoading(true);
     try {
-      const updatedProfile = { ...profile, ...values }; // Hanya update bagian yang diedit
-      await api.post("/contact", updatedProfile);
-      message.success("Profile berhasil diperbarui!");
-      fetchProfile(); // Refresh data setelah update
+      const token = localStorage.getItem("token");  // assuming the token is stored in localStorage
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+  
+      const updatedProfile = isAdding
+        ? { ...profile, [values.mediasocial]: values.name }
+        : { ...profile, [values.mediasocial]: values.name };
+  
+      await api.post("/contact", updatedProfile, { headers });
+      message.success(
+        isAdding
+          ? "Profile berhasil ditambahkan!"
+          : "Profile berhasil diperbarui!"
+      );
+      fetchProfile(); // Refresh data after update
       setIsModalVisible(false);
       form.resetFields();
     } catch (error) {
@@ -55,56 +78,71 @@ const Contact = () => {
       setLoading(false);
     }
   };
+  
 
-  // Fungsi untuk menangani edit berdasarkan media sosial yang dipilih
+  // Handle edit based on selected social media
   const handleEditProfile = (key) => {
     setCurrentProfile(key);
+    setIsAdding(false); // Set to editing mode
     setIsModalVisible(true);
   };
 
-  // Set nilai default ke form setelah modal terbuka
+  // Handle delete profile
+  const handleDeleteProfile = (key) => {
+    // Confirm the deletion
+    Modal.confirm({
+      title: `Are you sure you want to delete this ${key} profile?`,
+      content: "This action cannot be undone.",
+      onOk: async () => {
+        setLoading(true);
+        try {
+          const updatedProfile = { ...profile };
+          delete updatedProfile[key]; // Remove the profile by key
+          await api.post("/contact", updatedProfile); // Post the updated profile data
+          message.success(`${key} profile deleted successfully!`);
+          fetchProfile(); // Refresh data after delete
+        } catch (error) {
+          console.error("Error deleting profile:", error);
+          message.error("Gagal menghapus profile.");
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+  };
+
+  // Handle add new profile
+  const handleAddProfile = () => {
+    setCurrentProfile(null);
+    setIsAdding(true); // Set to adding mode
+    setIsModalVisible(true);
+  };
+
+  // Set default form values when modal is opened
   useEffect(() => {
     if (currentProfile && profile) {
-      const fieldName = `${currentProfile}Profile`;
-      form.setFieldsValue({ [fieldName]: profile?.[fieldName] || "" });
+      form.setFieldsValue({
+        name: profile[currentProfile] || "",
+        mediasocial: currentProfile,
+      });
     }
   }, [currentProfile, profile, form]);
 
-  // Data yang akan ditampilkan di tabel
-  const dataSource = profile
-    ? [
-        {
-          key: "instagram",
-          logo: <i className="fa-brands fa-instagram"></i>,
-          mediaSocial: "Instagram",
-          profileName: profile.instagramProfile || "-",
-        },
-        {
-          key: "facebook",
-          logo: <i className="fa-brands fa-facebook"></i>,
-          mediaSocial: "Facebook",
-          profileName: profile.facebookProfile || "-",
-        },
-        {
-          key: "twitter",
-          logo: <i className="fa-brands fa-twitter"></i>,
-          mediaSocial: "Twitter",
-          profileName: profile.twitterProfile || "-",
-        },
-        {
-          key: "tiktok",
-          logo: <i className="fa-brands fa-tiktok"></i>,
-          mediaSocial: "TikTok",
-          profileName: profile.tiktokProfile || "-",
-        },
-      ]
-    : [];
+  // Data to be displayed in the table
+  const dataSource = Object.keys(profile).map((key) => ({
+    key, // Use the actual key (social media platform) as the row key
+    logo: <i className={`fa-brands fa-${key}`} />, // Dynamically set logo for each profile type
+    mediasocial: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize first letter of media type
+    name: profile[key], // The profile name should be the value for this key
+  }));
+  
+  
 
-  // Kolom untuk tabel
+  // Columns for the table
   const columns = [
     { title: "Logo", dataIndex: "logo", key: "logo" },
-    { title: "Media Social", dataIndex: "mediaSocial", key: "mediaSocial" },
-    { title: "Profile Name", dataIndex: "profileName", key: "profileName" },
+    { title: "Media Social", dataIndex: "mediasocial", key: "mediasocial" },
+    { title: "Profile Name", dataIndex: "name", key: "name" },
     {
       title: "Aksi",
       key: "action",
@@ -117,10 +155,22 @@ const Contact = () => {
           >
             Edit
           </Button>
+          <Button
+            type="danger"
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteProfile(record.key)}
+          >
+            Delete
+          </Button>
         </Space>
       ),
     },
   ];
+
+  // Check if a profile for the selected media already exists
+  const isProfileAlreadyExists = (mediasocial) => {
+    return profile && profile[mediasocial];
+  };
 
   return (
     <Content style={{ padding: "24px", backgroundColor: "#f0f2f5" }}>
@@ -129,50 +179,82 @@ const Contact = () => {
           Manage Social Media Profiles
         </h1>
 
+        {/* Add Contact Button */}
+        <div className="mb-4">
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleAddProfile}
+          >
+            Add Contact
+          </Button>
+        </div>
+
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={24} md={24} lg={24} xl={24}>
             <Table
               dataSource={dataSource}
               columns={columns}
-              rowKey="key"
+              rowKey="key" // Use the unique key from the profile data as rowKey
               bordered
               loading={loading}
+              pagination={false} // Disable pagination if no data available
             />
           </Col>
         </Row>
 
         <Modal
-          title={`Edit ${
-            currentProfile
-              ? currentProfile[0].toUpperCase() + currentProfile.slice(1)
-              : ""
-          } Profile`}
+          title={`${isAdding ? "Add New Profile" : "Edit Profile"}`}
           open={isModalVisible}
           onCancel={() => setIsModalVisible(false)}
           footer={null}
         >
-          {currentProfile && (
-            <Form form={form} layout="vertical" onFinish={handleSaveProfile}>
+          <Form form={form} layout="vertical" onFinish={handleSaveProfile}>
+            {isAdding && (
               <Form.Item
-                label={`${
-                  currentProfile[0].toUpperCase() + currentProfile.slice(1)
-                } Profile`}
-                name={`${currentProfile}Profile`}
+                label="Select Social Media"
+                name="mediasocial"
+                rules={[
+                  { required: true, message: "Please select a social media platform!" },
+                ]}
               >
-                <Input placeholder={`Masukkan username ${currentProfile}`} />
+                <Select placeholder="Select Media Social">
+                  <Option value="instagram">Instagram</Option>
+                  <Option value="facebook">Facebook</Option>
+                  <Option value="twitter">Twitter</Option>
+                  <Option value="tiktok">TikTok</Option>
+                </Select>
               </Form.Item>
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit" loading={loading}>
-                    Simpan
-                  </Button>
-                  <Button onClick={() => setIsModalVisible(false)}>
-                    Batal
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          )}
+            )}
+            <Form.Item
+              label="Profile Name"
+              name="name"
+              rules={[{ required: true, message: "Please input the profile name!" }]}
+            >
+              <Input placeholder="Enter profile name (e.g., username)" />
+            </Form.Item>
+
+            {isAdding && // Display an error if the profile already exists for the selected media
+              isProfileAlreadyExists(form.getFieldValue("mediasocial")) && (
+                <p style={{ color: "red" }}>
+                  Profile for this media already exists. Please delete it first.
+                </p>
+              )}
+
+            <Form.Item>
+              <Space>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={loading}
+                  disabled={isAdding && isProfileAlreadyExists(form.getFieldValue("mediasocial"))}
+                >
+                  {isAdding ? "Add" : "Save"}
+                </Button>
+                <Button onClick={() => setIsModalVisible(false)}>Cancel</Button>
+              </Space>
+            </Form.Item>
+          </Form>
         </Modal>
       </div>
     </Content>
