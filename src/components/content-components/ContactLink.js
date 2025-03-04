@@ -3,71 +3,67 @@ import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
 import api from "../../api";
 
 const ContactLink = () => {
-  const [profile, setProfile] = useState({
-    instagramProfile: "",
-    facebookProfile: "",
-    twitterProfile: "",
-    tiktokProfile: "",
-  });
+  const [profile, setProfile] = useState({});
 
+  // Fetch profile data from the server
   useEffect(() => {
-    // Fetch profile data
-    api
-      .get("/contact")
-      .then((response) => {
-        setProfile(response.data);
-      })
-      .catch((error) => {
-      });
+    fetchProfile();
   }, []);
 
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get("/contact");
+
+      // Limit to maximum 4 social media platforms
+      const transformedProfile = response.data
+        .slice(0, 4) // Only take the first 4 items from the response
+        .reduce((acc, { name, mediasocial }) => {
+          acc[mediasocial] = name; // Use mediasocial as the key and name as the value
+          return acc;
+        }, {});
+
+      setProfile(transformedProfile); // Set the transformed profile data
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
+
   return (
-    <div className="items-center space-y-4 text-sm">
-      {profile.instagramProfile && (
-        <a
-          href={`https://instagram.com/@${profile.instagramProfile}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="items-center text-center no-underline"
-        >
-          <FaInstagram className="cursor-pointer hover:text-pink-500 text-xl" />
-          <span>{profile.instagramProfile}</span>
-        </a>
-      )}
-      {profile.facebookProfile && (
-        <a
-          href={`https://facebook.com/${profile.facebookProfile}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="items-center text-center no-underline"
-        >
-          <FaFacebook className="cursor-pointer hover:text-blue-600 text-xl" />
-          <span>{profile.facebookProfile}</span>
-        </a>
-      )}
-      {profile.twitterProfile && (
-        <a
-          href={`https://twitter.com/${profile.twitterProfile}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="items-center text-center no-underline"
-        >
-          <FaTwitter className="cursor-pointer hover:text-blue-500 text-xl" />
-          <span>{profile.twitterProfile}</span>
-        </a>
-      )}
-      {profile.tiktokProfile && (
-        <a
-          href={`https://tiktok.com/@${profile.tiktokProfile}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="items-center text-center no-underline"
-        >
-          <FaTiktok className="cursor-pointer hover:text-black text-xl" />
-          <span>{profile.tiktokProfile}</span>
-        </a>
-      )}
-    </div>
+    <>
+      {Object.keys(profile).map((key) => {
+        let icon = null;
+        switch (key) {
+          case "instagram":
+            icon = <FaInstagram className="text-pink-500 text-xl" />;
+            break;
+          case "facebook":
+            icon = <FaFacebook className="text-blue-600 text-xl" />;
+            break;
+          case "twitter":
+            icon = <FaTwitter className="text-blue-400 text-xl" />;
+            break;
+          case "tiktok":
+            icon = <FaTiktok className="text-black text-xl" />;
+            break;
+          default:
+            break;
+        }
+
+        return (
+          <div key={key} className="mb-1">
+            <a
+              href={`https://${key.toLowerCase()}.com/${profile[key]}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 text-white hover:underline"
+            >
+              {icon}
+              <span>{profile[key]}</span>
+            </a>
+          </div>
+        );
+      })}
+    </>
   );
 };
 

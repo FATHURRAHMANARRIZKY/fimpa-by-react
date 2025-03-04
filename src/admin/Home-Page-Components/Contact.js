@@ -34,40 +34,48 @@ const Contact = () => {
   const fetchProfile = async () => {
     try {
       const response = await api.get("/contact");
-  
-      // Transform the response data into an object with mediasocial as the key
-      const transformedProfile = response.data.reduce((acc, { name, mediasocial }) => {
-        acc[mediasocial] = name; // Use mediasocial as the key and name as the value
-        return acc;
-      }, {});
-  
+      const transformedProfile = response.data.reduce(
+        (acc, { name, mediasocial }) => {
+          acc[mediasocial] = { name, id: name }; // Include id to allow deletion and update
+          return acc;
+        },
+        {}
+      );
       setProfile(transformedProfile); // Set the transformed profile data
     } catch (error) {
       message.error("Gagal mengambil data profile.");
     }
   };
-  
-  
 
   // Handle saving profile (either add or edit)
   const handleSaveProfile = async (values) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");  // assuming the token is stored in localStorage
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("token="))
+        ?.split("=")[1]; // Ensure you are correctly retrieving the token
       const headers = {
         Authorization: `Bearer ${token}`,
       };
-  
-      const updatedProfile = isAdding
-        ? { ...profile, [values.mediasocial]: values.name }
-        : { ...profile, [values.mediasocial]: values.name };
-  
-      await api.post("/contact", updatedProfile, { headers });
-      message.success(
-        isAdding
-          ? "Profile berhasil ditambahkan!"
-          : "Profile berhasil diperbarui!"
-      );
+
+      if (isAdding) {
+        // Add a new profile
+        const newProfile = {
+          name: values.name,
+          mediasocial: values.mediasocial,
+        };
+        await api.post("/contact", newProfile, { headers });
+        message.success("Profile berhasil ditambahkan!");
+      } else {
+        // Update existing profile
+        const updatedProfile = {
+          name: values.name,
+        };
+        await api.put(`/contact/${currentProfile}`, updatedProfile, { headers });
+        message.success("Profile berhasil diperbarui!");
+      }
+
       fetchProfile(); // Refresh data after update
       setIsModalVisible(false);
       form.resetFields();
@@ -78,7 +86,6 @@ const Contact = () => {
       setLoading(false);
     }
   };
-  
 
   // Handle edit based on selected social media
   const handleEditProfile = (key) => {
@@ -96,9 +103,17 @@ const Contact = () => {
       onOk: async () => {
         setLoading(true);
         try {
-          const updatedProfile = { ...profile };
-          delete updatedProfile[key]; // Remove the profile by key
-          await api.post("/contact", updatedProfile); // Post the updated profile data
+          const token = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("token="))
+            ?.split("=")[1]; // Ensure you are correctly retrieving the token
+          const headers = {
+            Authorization: `Bearer ${token}`,
+          };
+
+          // Make a DELETE request to remove the specific profile
+          await api.delete(`/contact/${key}`, { headers });
+
           message.success(`${key} profile deleted successfully!`);
           fetchProfile(); // Refresh data after delete
         } catch (error) {
@@ -118,13 +133,20 @@ const Contact = () => {
     setIsModalVisible(true);
   };
 
+  // Check if a profile already exists for the given media
+  const isProfileAlreadyExists = (mediasocial) => {
+    return profile && profile[mediasocial]; // Check if a profile exists for the given media platform
+  };
+
   // Set default form values when modal is opened
   useEffect(() => {
-    if (currentProfile && profile) {
+    if (currentProfile) {
       form.setFieldsValue({
-        name: profile[currentProfile] || "",
+        name: profile[currentProfile]?.name || "",
         mediasocial: currentProfile,
       });
+    } else {
+      form.resetFields();
     }
   }, [currentProfile, profile, form]);
 
@@ -133,10 +155,8 @@ const Contact = () => {
     key, // Use the actual key (social media platform) as the row key
     logo: <i className={`fa-brands fa-${key}`} />, // Dynamically set logo for each profile type
     mediasocial: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize first letter of media type
-    name: profile[key], // The profile name should be the value for this key
+    name: profile[key].name, // The profile name should be the value for this key
   }));
-  
-  
 
   // Columns for the table
   const columns = [
@@ -167,19 +187,11 @@ const Contact = () => {
     },
   ];
 
-  // Check if a profile for the selected media already exists
-  const isProfileAlreadyExists = (mediasocial) => {
-    return profile && profile[mediasocial];
-  };
-
   return (
     <Content style={{ padding: "24px", backgroundColor: "#f0f2f5" }}>
       <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold mb-4">
-          Manage Social Media Profiles
-        </h1>
+        <h1 className="text-2xl font-bold mb-4">Manage Social Media Profiles</h1>
 
-        {/* Add Contact Button */}
         <div className="mb-4">
           <Button
             type="primary"
@@ -195,10 +207,10 @@ const Contact = () => {
             <Table
               dataSource={dataSource}
               columns={columns}
-              rowKey="key" // Use the unique key from the profile data as rowKey
+              rowKey="key"
               bordered
               loading={loading}
-              pagination={false} // Disable pagination if no data available
+              pagination={false}
             />
           </Col>
         </Row>
@@ -222,10 +234,13 @@ const Contact = () => {
                   <Option value="instagram">Instagram</Option>
                   <Option value="facebook">Facebook</Option>
                   <Option value="twitter">Twitter</Option>
+                  <Option value="youtube">YouTube</Option>
                   <Option value="tiktok">TikTok</Option>
+                  <Option value="pinterest">Pinterest</Option>
                 </Select>
               </Form.Item>
             )}
+
             <Form.Item
               label="Profile Name"
               name="name"

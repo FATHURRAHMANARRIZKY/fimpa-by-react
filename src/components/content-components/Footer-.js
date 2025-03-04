@@ -1,37 +1,29 @@
 import React from "react";
 import ContactLink from "./ContactLink"; // Import ContactLink
 
-
 const Footer = () => {
   return (
     <div className="bg-black text-white py-10">
-      <div className="container mx-auto flex flex-col md:flex-row justify-between items-start px-6 space-y-6 md:space-y-0 md:space-x-6">
-        {/* Left Section: About, Product, Reviews, Email */}
+      <div className="container mx-auto flex flex-col md:flex-row justify-between items-center px-6 space-y-6 md:space-y-0 md:space-x-6">
         <div className="w-full md:w-auto text-left">
           <h2 className="text-2xl font-bold">Fimpa Co.</h2>
-          <p className="mt-2">
+          <p>
             Your Pipes, Our Priority: Repair, Install, and Maintain with Care.
           </p>
-          
-          {/* Using Flexbox to align the two <ul> side by side */}
-          <div className="flex space-x-6">
-            {/* Left list (About, Product, Reviews, Email) */}
-            <ul className="space-y-2">
-              <li>About</li>
-              <li>Product</li>
-              <li>Reviews</li>
-              <li>fimpa@gmail.com</li>
-            </ul>
-
-            {/* Right list (g, a, s, s) */}
-            <ul className="space-y-2">
-              <li><ContactLink/></li>
-            </ul>
-          </div>
+          <ul className="mt-4 space-y-2">
+            <li>About</li>
+            <li>Product</li>
+            <li>Reviews</li>
+            <li>fimpa@gmail.com</li>
+          </ul>
         </div>
 
-        {/* Right Section: Google Map */}
-        <div className="w-full md:w-auto mt-6 md:mt-0">
+        {/* Ganti bagian ini dengan ContactLink */}
+        <div className="w-full md:w-auto text-left">
+          <ContactLink /> {/* Menampilkan social media links */}
+        </div>
+
+        <div className="w-full md:w-auto">
           <iframe
             title="Google Maps"
             className="w-full h-48 md:w-80 rounded-lg"
