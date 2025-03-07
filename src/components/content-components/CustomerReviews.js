@@ -12,18 +12,17 @@ import {
   notification,
 } from "antd";
 import api from "../../api"; // Correct import path based on your folder structure
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate, Link } from "react-router-dom"; // Import useNavigate
 import { AuthContext } from "../../context/AuthContext"; // Import AuthContext
 
-const CustomerReviews = ({ role, token }) => {
+const CustomerReviews = ({ role }) => {
   const [customerReviews, setCustomerReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(0);
-  const [editingReview, setEditingReview] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [setSubmitting] = useState(false);
   const { user } = useContext(AuthContext); // Get user data from context
   const navigate = useNavigate();
 
@@ -95,59 +94,6 @@ const CustomerReviews = ({ role, token }) => {
       .finally(() => setSubmitting(false));
   };
 
-  // Handle editing a review
-  const handleEdit = (review) => {
-    setEditingReview(review);
-    setComment(review.comment);
-    setRating(review.rating);
-    setShowForm(true);
-  };
-
-  // Handle update of an existing review
-  const handleUpdate = () => {
-    if (!comment || rating === 0) {
-      notification.error({
-        message: "Validation Error",
-        description: "Please fill in all fields.",
-      });
-      return;
-    }
-
-    setSubmitting(true);
-    const updatedReview = {
-      ...editingReview,
-      comment,
-      rating,
-    };
-
-    api
-      .put(`/ratings/${editingReview.id}`, updatedReview) // Ensure correct field (_id or id)
-      .then((response) => {
-        // Correctly update the review in the list
-        setCustomerReviews((prevReviews) =>
-          prevReviews.map((review) =>
-            review.id === editingReview.id ? response.data : review
-          )
-        );
-        setShowForm(false);
-        setComment("");
-        setRating(0);
-        setEditingReview(null);
-        notification.success({
-          message: "Review Updated",
-          description: "Your review has been successfully updated.",
-        });
-      })
-      .catch((error) => {
-        notification.error({
-          message: "Update Error",
-          description:
-            "There was an issue updating your review. Please try again later.",
-        });
-      })
-      .finally(() => setSubmitting(false));
-  };
-
   const handleUnauthenticatedSubmit = () => {
     setShowLoginPrompt(true);
   };
@@ -172,6 +118,7 @@ const CustomerReviews = ({ role, token }) => {
           {reviewCount.toLocaleString()} Customer Reviews
         </p>
       </div>
+      <Link to="/reviews" className="text-black hover:underline">Ingin melihat lebih banyak reviews klik disini!</Link>
       <hr className="border-gray-300 mb-4" />
       <Row gutter={[16, 16]}>
         {loading ? (
@@ -179,7 +126,7 @@ const CustomerReviews = ({ role, token }) => {
             <Spin size="large" />
           </div>
         ) : Array.isArray(customerReviews) && customerReviews.length > 0 ? (
-          customerReviews.map((review, index) => (
+          customerReviews.slice(0, 6).map((review, index) => (
             <Col key={index} xs={24} md={8}>
               <Card>
                 <h4>{review.name}</h4>
@@ -189,11 +136,6 @@ const CustomerReviews = ({ role, token }) => {
                 <p className="text-gray-500">
                   {new Date(review.createdAt).toLocaleDateString()}
                 </p>
-                {review.email === user?.email && (
-                  <Button onClick={() => handleEdit(review)} type="link">
-                    Edit
-                  </Button>
-                )}
               </Card>
             </Col>
           ))
@@ -201,6 +143,14 @@ const CustomerReviews = ({ role, token }) => {
           <p className="text-center">Tidak ada ulasan ditemukan.</p>
         )}
       </Row>
+
+      {customerReviews.length > 6 && (
+        <div className="text-center mt-4">
+          <Button type="default" onClick={() => navigate("/reviews")}>
+            Lihat Semua Review
+          </Button>
+        </div>
+      )}
 
       {/* Correctly handle "Submit Review" button */}
       {role === "USER" && !isUserReviewSubmitted ? (
@@ -224,10 +174,10 @@ const CustomerReviews = ({ role, token }) => {
       )}
 
       <Modal
-        title={editingReview ? "Edit Your Review" : "Submit a Review"}
+        title="Submit a Review"
         open={showForm}
         onCancel={() => setShowForm(false)}
-        onOk={editingReview ? handleUpdate : handleSubmit}
+        onOk={handleSubmit}
       >
         <Form layout="vertical">
           <Form.Item label="Username">

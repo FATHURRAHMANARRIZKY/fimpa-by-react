@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import api from "../api";
 
 export const AuthContext = createContext();
@@ -11,16 +11,10 @@ export const AuthProvider = ({ children }) => {
 
   const verifyToken = async () => {
     try {
-      const response = await api.get("/verify-token", {
-        withCredentials: true,  // Important: Ensure the cookie is sent
-      });
-
-      // Check if token is valid and response contains the role
+      const response = await api.get("/verify-token", { withCredentials: true });
       if (response.status === 200 && response.data.role) {
         setIsLoggedIn(true);
         setRole(response.data.role);
-
-        // Fetch user profile after token verification
         const profileResponse = await api.get("/me", { withCredentials: true });
         if (profileResponse.status === 200) {
           setUser(profileResponse.data);
@@ -35,17 +29,16 @@ export const AuthProvider = ({ children }) => {
       setRole("guest");
       setUser(null);
     } finally {
-      setLoading(false);  // Set loading state to false after verifying
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    verifyToken();  // Trigger token verification when the component mounts
-  }, []);  // Empty dependency array ensures it runs once on mount
+    verifyToken();
+  }, []);
 
-  // Render loading state while verification is happening
   if (loading) {
-    return <div>Loading...</div>;  // You can replace this with a spinner component
+    return <div>Loading...</div>;
   }
 
   return (
@@ -54,3 +47,4 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+export const useAuth = () => useContext(AuthContext);

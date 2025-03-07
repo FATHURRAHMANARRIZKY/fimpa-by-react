@@ -6,10 +6,12 @@ import Login from "./auth/Login";
 import ContentHome from "./components/Content";
 import api from "./api";
 import { AuthContext } from "./context/AuthContext";
-import HomePage from "./admin/HomePage"; // Import HomePage
-import NotFound from "./NotFound"; // Import NotFound
-import { Spin } from "antd"; // Optional: for loading spinner
+import HomePage from "./admin/HomePage";
+import NotFound from "./NotFound";
+import { Spin } from "antd";
 import Register from "./auth/Register";
+import ProfilePage from "./auth/ProfilePage";
+import ReviewsPage from "./components/content-components/ReviewPage";
 
 export default function App() {
   const { isLoggedIn, role, loading, verifyToken, setIsLoggedIn } =
@@ -78,7 +80,6 @@ export default function App() {
         }
       />
 
-      {/* Register route */}
       <Route
         path="/register"
         element={
@@ -90,7 +91,19 @@ export default function App() {
         }
       />
 
-      {/* Catch-all route for 404 Not Found */}
+      <Route
+        path="/:email"
+        element={
+          isLoggedIn && role === "USER" ? (
+            <ProfilePage />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+
+      <Route path="/reviews" element={<ReviewsPage />} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

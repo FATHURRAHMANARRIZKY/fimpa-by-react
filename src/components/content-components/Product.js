@@ -112,10 +112,37 @@ const Product = () => {
                 onClick={() => handleCardClick(product)}
               >
                 <h3 className="text-lg font-semibold">{product.name}</h3>
-                <p className="text-gray-600 text-sm">{product.description}</p>
+                <p className="text-gray-600 text-sm">
+                  {product.description.substring(0, 100)}...
+                </p>
                 <p className="text-gray-400 text-xs">
                   Kategori: {product.category}
                 </p>
+                {product && (
+                  <p>
+                    Harga:{" "}
+                    {new Intl.NumberFormat("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                    }).format(product.minPrice)}{" "}
+                    -{" "}
+                    {new Intl.NumberFormat("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                    }).format(product.maxPrice)}
+                  </p>
+                )}
+                <div className="text-center">
+                  <Button
+                    key="wa-button"
+                    type="primary"
+                    className="py-2"
+                    onClick={handleWhatsAppClick}
+                  >
+                    <i className="fa-brands fa-whatsapp fa-shake"></i> Hubungi
+                    via WhatsApp
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
@@ -140,12 +167,12 @@ const Product = () => {
         onOk={handleCloseModal}
         destroyOnClose={true}
         footer={[
-          <Input
-            key="input"
-            placeholder="Tulis pesan untuk WhatsApp..."
-            value={whatsappText}
-            onChange={(e) => setWhatsappText(e.target.value)}
-          />,
+          // <Input
+          //   key="input"
+          //   placeholder="Tulis pesan untuk WhatsApp..."
+          //   value={whatsappText}
+          //   onChange={(e) => setWhatsappText(e.target.value)}
+          // />,
           <Button
             key="wa-button"
             type="primary"

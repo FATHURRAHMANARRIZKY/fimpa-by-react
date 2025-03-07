@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaTwitter, FaTiktok, FaYoutube } from "react-icons/fa";
 import api from "../../api";
 
 const ContactLink = () => {
@@ -44,6 +44,9 @@ const ContactLink = () => {
             break;
           case "tiktok":
             icon = <FaTiktok className="text-black text-xl" />;
+            break;
+            case "youtube":
+            icon = <FaYoutube className="text-red-600 text-xl"/>;
             break;
           default:
             break;

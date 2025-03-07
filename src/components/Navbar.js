@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 import api from "../api";
 
 export default function Navbar({ activeLink, handleNavLinkClick }) {
@@ -27,11 +28,7 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
     setMenuOpen(!menuOpen);
   };
 
-  const handleProfile = () => {};
-
   const handleSettings = () => {};
-
-  const handleSignOut = () => {};
 
   const handleLogout = async () => {
     try {
@@ -191,14 +188,14 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
                   >
                     {isLoggedIn ? (
                       <>
-                        <a
-                          href={`/${ProfileEmail.email}`}
+                        <Link
+                          to={`/${ProfileEmail}`}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           role="menuitem"
                           id="user-menu-item-0"
                         >
                           Your Profile
-                        </a>
+                        </Link>
                         <button
                           onClick={handleSettings}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -429,11 +426,12 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
                 <div className="mt-3 space-y-1 px-2">
                   {isLoggedIn ? (
                     <>
-                      <a href={`/${ProfileEmail.email}`}
+                      <Link
+                        to={`/${ProfileEmail}`}
                         className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
                       >
                         Your Profile
-                      </a>
+                      </Link>
                       <button
                         onClick={handleSettings}
                         className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
@@ -476,3 +474,4 @@ export default function Navbar({ activeLink, handleNavLinkClick }) {
     </nav>
   );
 }
+
